@@ -292,7 +292,7 @@ impl Map {
     /// The six corners, in direction order. Ship i starts on corner i.
     pub fn corners(&self) -> [Cell; 6];
     /// Every cell in the sea, in a fixed order. Clear water and rocks.
-    pub fn water_cells(&self) -> HashSet<Cell>;
+    pub fn water_cells(&self) -> Vec<Cell>;
     /// Water that is not a rock.
     pub fn clear_cells(&self) -> impl Iterator<Item = Cell> + '_;
 }
