@@ -230,7 +230,7 @@ diagonal costs and whether it can be blocked, and they would decide differently.
 
 \begin{lstlisting}
 #[derive(Copy, Clone, PartialEq, Eq, Hash, PartialOrd, Ord, Debug)]
-pub enum Direction { East, NorthEast, West, SouthWest, SouthEast }
+pub enum Direction { East, NorthEast, NorthWest, West, SouthWest, SouthEast }
 
 impl Direction {
     pub fn offset(self) -> (i32, i32);
