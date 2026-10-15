@@ -233,9 +233,9 @@ diagonal costs and whether it can be blocked, and they would decide differently.
 pub enum Direction { East, NorthEast, NorthWest, West, SouthWest, SouthEast }
 
 impl Direction {
-    pub fn offset(self) -> (i32, i32);
+    pub fn offset(&self) -> (i32, i32);
     /// 0 for the same direction, 3 for the opposite one.
-    pub fn relative_angle(self, other: Direction) -> u8;
+    pub fn relative_angle(&self, other: &Direction) -> u8;
 }
 \end{lstlisting}
 
