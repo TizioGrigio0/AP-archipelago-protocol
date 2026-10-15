@@ -595,7 +595,7 @@ pub enum Clue {
     /// The coordinate on `axis` satisfies `bound`.
     HalfPlane { axis: Axis, bound: Bound },
     /// Strictly closer to `a` than to `b`.
-    Nearer { a: &Cell, b: Cell },
+    Nearer { a: Cell, b: Cell },
 }
 
 #[derive(Copy, Clone, PartialEq, Eq, Hash, PartialOrd, Ord, Debug)]
