@@ -188,7 +188,7 @@ $s = -q - r$ is implied; the triple $(q, r, s)$ always sums to zero and is conve
 arithmetic.
 
 \begin{lstlisting}
-#[derive(Copy, Clone, PartialEq, Eq, Hash, PartialOrd, Ord)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, PartialOrd, Ord, Debug)]
 pub struct Cell { pub q: i32, pub r: i32 }
 
 impl Cell {
