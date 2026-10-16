@@ -325,6 +325,11 @@ pub type Round = u32;
 
 /// Reproducible randomness. Never the clock, never thread-local.
 pub type Seed = u64;
+
+/// Issued in RoundOpen, consumed by Submit. Not Clone/Copy.
+/// A new value for every Ship and every round, drawn so that no Ship can guess it.
+#[derive(PartialEq, Eq, Hash, PartialOrd, Ord, Debug)]
+pub struct TurnToken(pub u64);
 \end{lstlisting}
 
 All of them derive \texttt{Ord} for the same reason \texttt{Cell} does: sorted traversal is how
