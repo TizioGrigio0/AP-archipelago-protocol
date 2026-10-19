@@ -189,7 +189,11 @@ arithmetic.
 
 \begin{lstlisting}
 #[derive(Copy, Clone, PartialEq, Eq, Hash, PartialOrd, Ord)]
-pub struct Cell { pub q: i32, pub r: i32 }
+pub struct Cell {
+    pub q: i32,
+    pub r: i32,
+    terrain: Terrain,
+}
 
 impl Cell {
     pub fn s(self) -> i32 { -self.q - self.r }
@@ -281,7 +285,10 @@ pub enum Terrain {
 }
 
 /// The terrain of every cell, and nothing else. Public and fixed for the game.
-pub struct Map { /* ... */ }
+pub struct Map {
+    a_radius: u32,
+    cells: HashSet<Cell>,
+}
 
 impl Map {
     pub fn radius(&self) -> u32;
