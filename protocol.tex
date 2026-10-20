@@ -979,6 +979,7 @@ submission and delivered in the \texttt{inbox} of a result.
 \begin{lstlisting}
 /// What a Ship sends.
 pub struct Letter {
+    pub from: ShipId,
     pub to: ShipId,
     /// Need not be clues the sender holds. Lying is the point.
     pub clues: Vec<Clue>,
