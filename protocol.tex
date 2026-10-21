@@ -613,7 +613,7 @@ impl Clue {
     pub fn holds(self, cell: Cell) -> bool {
         match self {
             Clue::Within { centre, radius } => cell.distance(centre) <= radius,
-            Clue::Beyond { centre, radius } => cell.distance(centre) >= radius,
+            Clue::Beyond { centre, radius } => cell.distance(centre) > radius,
             Clue::HalfPlane { axis, bound } => {
                 let v = match axis {
                     Axis::Q => cell.q,
