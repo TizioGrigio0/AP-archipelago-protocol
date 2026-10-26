@@ -1138,7 +1138,7 @@ AdmiraltyToShip::Rejected { round: Round, reason: Rejection }
 pub enum Rejection {
     WrongRound { open: Round }, StaleToken,
     NotANeighbour, OutsideArchipelago, CellIsLand,
-    CellOccupied { by: ShipId },
+    CellOccupied { by: ShipId }, AgainstTheWind,
     NotAdjacentToIsland, NoBerth, IslandRefused, NotMoored,
     OutOfRange, NotVisible,
     NoSuchShip, AlreadyAllied, NoSuchProposal, NotAllied,
