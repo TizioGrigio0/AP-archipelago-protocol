@@ -326,6 +326,17 @@ pub type Round = u32;
 
 /// Reproducible randomness. Never the clock, never thread-local.
 pub type Seed = u64;
+
+/// Issued in RoundOpen, consumed by Submit. Not Clone/Copy.
+/// Its Debug is written by hand and never shows the nonce, so a Ship cannot rebuild one.
+pub struct TurnToken { round: Round, ship: ShipId, nonce: u64 }
+
+impl TurnToken {
+    /// For the Admiralty: `nonce` comes from a source no Ship can predict like a seed derived from Time.
+    pub fn issue(round: Round, ship: ShipId, nonce: u64) -> TurnToken;
+    pub fn round(&self) -> Round;
+}
+
 \end{lstlisting}
 
 All of them derive \texttt{Ord} for the same reason \texttt{Cell} does: sorted traversal is how
