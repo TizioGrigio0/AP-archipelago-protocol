@@ -539,6 +539,7 @@ The first message a \ship{} receives is always \texttt{Welcome}, and it arrives 
 \begin{lstlisting}
 pub struct Welcome {
     pub ship: ShipId,
+    pub roster: Vec<ShipId>
     /// Every numeric rule of this game.
     pub params: Params,
     /// The terrain of every cell. Public, and fixed for the whole game.
@@ -710,6 +711,7 @@ Each round is one exchange with each \ship{} still afloat:
 /// Admiralty -> Ship. The round is open; answer before the deadline.
 AdmiraltyToShip::RoundOpen {
     round: Round,
+    roster: Vec<ShipId>
     /// Milliseconds from receipt, not an absolute time: clocks are not synchronised.
     deadline_ms: u32,
     view: ShipView,
