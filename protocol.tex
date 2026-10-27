@@ -711,7 +711,6 @@ Each round is one exchange with each \ship{} still afloat:
 /// Admiralty -> Ship. The round is open; answer before the deadline.
 AdmiraltyToShip::RoundOpen {
     round: Round,
-    roster: Vec<ShipId>
     /// Milliseconds from receipt, not an absolute time: clocks are not synchronised.
     deadline_ms: u32,
     view: ShipView,
