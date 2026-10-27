@@ -539,6 +539,7 @@ The first message a \ship{} receives is always \texttt{Welcome}, and it arrives 
 \begin{lstlisting}
 pub struct Welcome {
     pub ship: ShipId,
+    pub roster: Vec<ShipId>
     /// Every numeric rule of this game.
     pub params: Params,
     /// The terrain of every cell. Public, and fixed for the whole game.
