@@ -919,7 +919,7 @@ impl Chart {
     pub fn view_for(&self, ship: ShipId) -> ShipView;
 
     /// What a spectator sees: everything.
-    pub fn spectator_view(&self) -> HashMap<ShipId, ShipView>;
+    pub fn spectator_view(&self) -> SpectatorView;
 
     pub fn outcome(&self) -> Option<Outcome>;
 }
