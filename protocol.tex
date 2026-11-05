@@ -974,8 +974,8 @@ legal, what a view may contain --- is in the \MD{} with the rest of the rules.
 
 \subsection{How they travel}
 
-A \ship{} may send messages to other \ships. They are carried in the \texttt{outbox} of a
-submission and delivered in the \texttt{inbox} of a result.
+Messages are carried from the \texttt{outbox} of a
+submission to the \texttt{inbox} of a result.
 
 \begin{lstlisting}
 /// What a Ship sends.
@@ -996,50 +996,49 @@ pub struct Delivered {
 \end{lstlisting}
 
 \textbf{The sender is stamped by the \admiralty{} and cannot be forged.} A \ship{} chooses what it
-says and to whom; who it is comes from the endpoint the \texttt{Letter} arrived on, and is not a
-field the sender can set. This is the one thing about a message that is guaranteed. Everything in
-it may be a lie; the name on it may not.
+says and to whom; who it is comes from the endpoint the \texttt{Letter} arrived on. Everything in
+it may be a lie.
 
-\clues{} travel as \texttt{Clue} values rather than as prose, because the receiver has to be able to
-evaluate them (see the \MD). \texttt{text} is for everything else --- promises, threats,
-negotiations --- and nothing in the system reads it but the \ship{} it is addressed to.
+\clues{} travel as \texttt{Clue} values, because the receiver evalueates them. \texttt{text} is for everything else and only the \ship{} it is addressed to read it.
 
 A message sent in round $R$ arrives with the results of round $R$, and can therefore be read before
 choosing an action for round $R+1$. Coordination costs one round of delay.
 
-Sending is not an action: a \ship{} acts and speaks in the same round. The limits are \textbf{3}
+A \ship{} acts and speaks in the same round. The limits are \textbf{3}
 letters per submission, and at most \textbf{4} \clues{} and \textbf{256} characters in each.
-Something must bound it, or six \ships over two hundred rounds will produce logs too large to
-read.
+Something must bound it, otherwise the logs will be too large to read.
 
-A submission that exceeds any of these is \textbf{rejected, not quietly trimmed}. Silently dropping
-the fourth letter would leave a \ship{} believing it had said something it had not, and its author
-hunting a bug in the wrong component. Tell it. Note that the whole submission goes, action
-included: the \ship{} is answered with \texttt{Rejection::TooMuchMail} and recorded as having
-played \texttt{Hold}. Overrunning the cap costs a round.
+A submission that exceeds is \textbf{rejected}.
+% Silently dropping
+%the fourth letter would leave a \ship{} believing it had said something it had not, and its author
+%hunting a bug in the wrong component. Tell it. Note that the whole submission goes, action
+%included: the \ship{} is answered with \texttt{Rejection::TooMuchMail} and recorded as having
+%played \texttt{Hold}. 
+Overrunning the cap costs a round.
 
-The \admiralty{} makes a reasonable effort to deliver and no promise. A letter addressed to a
-\ship{} that does not exist, to one that has sunk, or to the sender itself is dropped. There is no
-acknowledgement, no delivery report, and no ordering guarantee between letters from different
-senders.
+The \admirality{} delivery is not guaranteed, because there is no acknowledgement or delivery report. also ordering is not guaranteed.
+% The \admiralty{} makes a reasonable effort to deliver and no promise. A letter addressed to a
+% \ship{} that does not exist, to one that has sunk, or to the sender itself is dropped. There is no
+% acknowledgement, no delivery report, and no ordering guarantee between letters from different
+% senders.
 
 \subsection{Why it is relayed and not direct}
 
-Because two independently written student components that wait on each other will wait forever. A
-\ship{} blocked on a peer during its own round stalls nothing but itself --- the \admiralty{} will
-time it out --- but a \ship{} that has staked its turn on an answer that never comes has wasted the
-round, and at the fair it will do so in front of an audience.
-
-Uncooperativeness is also a legitimate strategy here. A \ship{} that depends on being answered is a
-\ship{} its rivals can freeze simply by saying nothing, and the relay is what keeps that from being
-a winning move: the mail never blocks anybody, because nobody ever waits for it.
+There must be an authority to time out a stalled \ship{} and that action should be done in front of an audience.
+% Because two independently written student components that wait on each other will wait forever. A
+% \ship{} blocked on a peer during its own round stalls nothing but itself --- the \admiralty{} will
+% time it out --- but a \ship{} that has staked its turn on an answer that never comes has wasted the
+% round, and at the fair it will do so in front of an audience.
+Uncooperativeness is also a legitimate strategy here. 
+% A \ship{} that depends on being answered is a
+% \ship{} its rivals can freeze simply by saying nothing, and the relay is what keeps that from being
+% a winning move: the mail never blocks anybody, because nobody ever waits for it.
 
 \subsection{The two rules}
 
 \begin{description}
     \item[A message may never be a precondition for the legality of an action.] The \chart{}
-      decides legality from its own state alone. It never sees a message and does not know any were
-      exchanged. Anything agreed between \ships must be re-stated as an ordinary action to have any
+      decides legality from its state. Every \ships agreement must be re-stated as an ordinary action to have any
       effect.
     \item[A \ship{} must remain fully playable if every other \ship{} ignores it forever.] This is
       tested: a \ship{} is run in a game where no peer ever replies, and must complete it within the
@@ -1051,13 +1050,16 @@ and not advice.
 
 \subsection{What this is for}
 
-The consequence is the point of the whole arrangement: \textbf{what is negotiated is private and
-cannot be verified; what is done is public and is validated.}
+\textbf{Negotiations are private and what is done is public and is validated.}
 
-You can tell another \ship{} that an \island{} swore the \treasure{} lies east of a given line, and
-it cannot check. You can agree to attack on round forty and simply not turn up. The \admiralty{}
-sees who fired; it never knew a promise existed, and cannot be appealed to. Deception is not an
-exploit here. It is the mechanic.
+% You can tell another \ship{} that an \island{} swore the \treasure{} lies east of a given line, and
+% it cannot check. You can agree to attack on round forty and simply not turn up. The \admiralty{}
+% sees who fired; it never knew a promise existed, and cannot be appealed to. Deception is not an
+% exploit here. It is the mechanic.
+% 
+% This is an AI example for sure, i keep it commented i is necessary for someone.
+
+%%%% -- %%%%
 
 \newpage
 \section{The \cartographer}
