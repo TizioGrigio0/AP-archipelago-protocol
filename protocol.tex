@@ -379,42 +379,30 @@ A cell is visible from another when both hold:
     \item no \textbf{land} cell lies strictly between them along the line joining them.
 \end{itemize}
 
-Endpoints are excluded from the obstruction test. A \ship{} can always see the \island{} it is
-moored at, and an \island{} does not hide itself.
-
-``Land'' means both kinds: an \island's footprint and a cliff block sight identically, and
-\texttt{visible} has no reason to tell them apart. A rock is water and never blocks anything, so a
-\ship{} sitting on one is in plain view.
-
-The range limit matters as much as the obstruction rule. Without it, a \ship{} in open water would
-see the entire \archipelago{} and there would be no fog to speak of, and therefore nothing worth
-trading or lying about.
+Endpoints are excluded from the obstruction test: a \ship{} can always see the \island{} it is
+moored at, and an \island{} does not hide itself. Both kinds of land (\island{} footprints and
+cliffs) block sight identically, whereas a rock is water and never blocks sight, leaving a \ship{}
+on it in plain view. The range limit is as important as obstruction: without it, a \ship{} in open
+water would see the entire \archipelago{}, eliminating fog of war and any reason to trade or lie.
 
 \subsection{Drawing the line}
 \label{proto:losdecide}
 
-``Along the line joining them'' is not self-explanatory on a hex grid, and it is the part of this
-document most likely to be implemented two different ways. It is therefore settled here rather than
-left open.
-
+To avoid divergent implementations on a hex grid, the line-of-sight rule is fixed as follows.
 Interpolate from \emph{from} to \emph{to} in cube coordinates, taking
-$\mathrm{dist}(\mathit{from},\mathit{to}) + 1$ equally spaced samples. Each sample is a point in
-the plane, not yet a cell. For each one, take its \textbf{candidates}: every cell whose centre is
-nearest to that point. Usually there is exactly one. When the point falls on the boundary between
-two cells there are two, and if one ever falls on a vertex there are three; the rule does not care
-how many, only that you keep all of them rather than choosing between them.
+$\mathrm{dist}(\mathit{from},\mathit{to}) + 1$ equally spaced planar samples. For each sample
+point, take its \textbf{candidates}: all cells whose centres are nearest to it (one cell inside a
+hex, two on an edge boundary, or three on a vertex; keep all of them rather than choosing one).
 
 \begin{center}
 A sample is blocked when \emph{every} one of its candidates is land. The line is obstructed when
 any interior sample is blocked.
 \end{center}
 
-An example is worth more than the rule here. A \ship{} at $(0,0)$ looks towards a \ship{} at
-$(2,-1)$. In cube coordinates those are $(0,0,0)$ and $(2,-1,-1)$, and the distance between them is
-$2$, so there are three samples: $t = 0$, $t = 0.5$ and $t = 1$. The first and last are the
-endpoints and are not tested. The middle one falls at $(1, -0.5, -0.5)$, which sits exactly on the
-edge between cell $(1,-1)$ and cell $(1,0)$. Both are candidates and neither is nearer, so what
-happens depends on both:
+For example, a \ship{} at $(0,0)$ looking towards $(2,-1)$ (cube coordinates $(0,0,0)$ and
+$(2,-1,-1)$, distance $2$) produces three samples at $t = 0$, $t = 0.5$ and $t = 1$. The
+endpoints ($t = 0, 1$) are not tested. The interior sample $(1, -0.5, -0.5)$ lies on the edge
+between $(1,-1)$ and $(1,0)$, so both are candidates:
 
 \begin{center}
 \begin{tabular}{|l|l|l|}
@@ -432,54 +420,39 @@ happens depends on both:
 \end{tabular}
 \end{center}
 
-One \island{} cell on that edge does not block the view. Two do.
+One \island{} cell on that edge does not block the view; two do.
 
-Note what the rule does \emph{not} say. The line is straight and fixed, and only the choice of cell
-at a sample is generous. A single land cell sitting squarely on the line, where there is no
-ambiguity about which cell the sample belongs to, blocks the view --- even though a \ship{} could
-plainly sail around that \island{} in a few rounds. \texttt{visible} tests one straight line. It
-never searches for a clear route.
+\texttt{visible} tests a single straight, fixed line and never searches for a clear route: an
+unambiguous single land cell squarely on the line blocks sight, even if a \ship{} could sail around
+that \island{} in a few rounds. Because sight is blocked only when land blocks every candidate at a
+sample, three properties follow directly:
 
-Put another way: sight is blocked only if land blocks every way through. Three questions disappear
-with that rule, which is why it was chosen.
-
-\textbf{There is no tie-break to agree on.} No nudge, no epsilon, no argument about which way to
-round. The usual technique --- offsetting one endpoint by a tiny amount before interpolating ---
-obliges every implementation to use the same tiny amount in the same direction, and that is exactly
-the kind of agreement that does not survive twenty independent implementations. Taking every
-nearest cell removes the question instead of answering it.
+\textbf{There is no tie-break to agree on.} Keeping all nearest cells avoids epsilon offsets or
+rounding conventions that independent implementations might apply differently.
 
 \textbf{Symmetry comes free.} $\mathrm{visible}(a,b) = \mathrm{visible}(b,a)$ holds by
-construction, because reversing the line yields the same samples in the opposite order and the same
-candidate sets. Symmetry need not be imposed, tested for, or patched up afterwards.
+construction, as reversing the line yields the same samples and candidate sets in reverse order.
 
-\textbf{Grazing settles itself.} A line passing exactly between two land cells is blocked; a line
-passing exactly between a land cell and a water cell is not.
+\textbf{Grazing settles itself.} A line passing exactly between two land cells is blocked; one
+between land and water is not.
 
-The price is that vision is slightly generous: two \islands{} whose footprints meet at a shared
-corner do not seal the
-gap between them. That is the right mistake to make. A \ship{} that believes itself hidden and is
-not will lose a game to a rule it cannot see; a \ship{} that believes itself exposed and is not
-will only sail more carefully than it needed to.
-
-Visibility is strictly boolean. A cell is visible or it is not. There is no partial visibility and
-there are no degrees of concealment.
+Consequently, vision is slightly generous: two \islands{} meeting only at a shared corner do not
+seal the gap between them. This errs on the safe side: a \ship{} that mistakenly believes itself
+exposed only sails more carefully, whereas one that mistakenly believes itself hidden loses to an
+unseen rule. Visibility is strictly boolean, with no partial visibility or degrees of concealment.
 
 \subsection{Test vectors}
 \label{proto:vectors}
 
-Because this function is used both to decide what a \ship{} is told and to decide whether a \ship{}
-may fire, its definition must be pinned down by more than prose.
+Because \texttt{visible} determines both what a \ship{} is told and whether it may fire, the \WG{}
+must pin down its definition by publishing a file of \textbf{test vectors} (small maps with cell
+pairs and expected answers), included in the conformance suite (\OD). Both the shared library and
+any \ship{} computing visibility for its own planning must pass them.
 
-The \WG{} must publish a file of \textbf{test vectors}: a set of small maps together with, for
-each, a list of cell pairs and the expected answer. Every implementation --- the shared library,
-and any \ship{} that computes visibility for its own planning --- must pass them. The conformance
-suite (\OD) includes them.
-
-Write the vectors to be nasty. Include lines exactly between two cells, lines that graze corners,
-lines that pass between two land cells and between one land and one water cell, pairs at exactly
-the range limit, pairs at range limit plus one, a \ship{} adjacent to an \island{} on every one of
-the six sides, and a \ship{} entirely surrounded by land.
+The vectors must cover edge cases: lines passing exactly between two cells (two land cells, or one
+land and one water), lines grazing corners, pairs at the exact range limit and at range limit plus
+one, a \ship{} adjacent to an \island{} on each of the six sides, and a \ship{} entirely surrounded
+by land.
 
 \newpage
 \section{Weather}
