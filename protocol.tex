@@ -582,9 +582,8 @@ receive a message addressed to it --- which is the whole reason there are four m
 \section{\clues{}}
 \label{proto:clue}
 
-A \clue{} is a predicate over cells. A \clue{} that came from an \island{} is true of the
-\treasure{}'s cell; a \clue{} that came from another \ship{} may be anything at all. The \MD{}
-explains what \clues{} are for and where they come from. This section fixes what one \emph{is}.
+A \clue{} is a predicate applied to cells.
+A \clue{} received from an \island{} is always true with respect to the \treasure{}'s position; a \clue{} obtained from another \ship{}, however, is not necessarily true.
 
 \subsection{The type}
 
@@ -592,24 +591,19 @@ explains what \clues{} are for and where they come from. This section fixes what
 #[non_exhaustive]
 #[derive(Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord, Debug)]
 pub enum Clue {
-    /// No further than `radius` from `centre`.
     Within { centre: Cell, radius: u32 },
-    /// Further than `radius` from `centre`.
     Beyond { centre: Cell, radius: u32 },
-    /// The coordinate on `axis` satisfies `bound`.
     HalfPlane { axis: Axis, bound: Bound },
-    /// Strictly closer to `a` than to `b`.
     Nearer { a: Cell, b: Cell },
 }
 
-#[derive(Copy, Clone, PartialEq, Eq, Hash, PartialOrd, Ord, Debug)]
+#[derive(Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord, Debug)]
 pub enum Axis { Q, R, S }
 
-#[derive(Copy, Clone, PartialEq, Eq, Hash, PartialOrd, Ord, Debug)]
+#[derive(Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord, Debug)]
 pub enum Bound { AtLeast(i32), AtMost(i32) }
 
 impl Clue {
-    /// True when this clue is consistent with the treasure lying in `cell`.
     pub fn holds(self, cell: Cell) -> bool {
         match self {
             Clue::Within { centre, radius } => cell.distance(centre) <= radius,
@@ -633,48 +627,20 @@ impl Clue {
 
 \subsection{Why it looks like this}
 
-\textbf{Four variants, and they cut the sea in different shapes.} \texttt{Within} and
-\texttt{Beyond} give discs and their complements, and a pair of them gives an annulus.
-\texttt{HalfPlane} gives a straight cut along one of the three hex axes. \texttt{Nearer} gives a
-perpendicular bisector. Intersecting four \clues{} of the same shape is arithmetic; intersecting
-four of these is a puzzle, which is the point.
+The \texttt{Clue} enum provides \texttt{Within} and \texttt{Beyond} to bound a disc and its complement (forming an annulus when combined), \texttt{HalfPlane} to split the map along one of the three hex axes, and \texttt{Nearer} to trace a perpendicular bisector.
+Recursion is disallowed as it would add unnecessary allocation and evaluation overhead: there is no \texttt{Not(Box<Clue>)} because negation is already intrinsic to the flat variants (\texttt{Beyond} complements \texttt{Within}, and \texttt{Bound} is bidirectional).
 
-\textbf{There is no \texttt{Not(Box<Clue>)}.} Recursion would buy expressiveness the game does not
-need, at the cost of an allocation and a recursive \texttt{holds}. The negations that matter already
-exist as flat variants: \texttt{Beyond} is the complement of \texttt{Within}, and \texttt{Bound}
-gives both directions of a half-plane.
+\textbf{\texttt{holds} requires only the cell:} it is a pure, total, and panic-free function comparing only integers without consulting the map (a \texttt{\&Map} parameter will be added by the \WG{} only if a topology-dependent variant like ``not adjacent to land'' is ever introduced).
 
-\textbf{\texttt{holds} takes a cell and nothing else.} It is pure, it is total, and it cannot
-panic: every arm is a comparison between integers. None of the four variants needs to consult the
-map. Should the \WG{} ever add one that does --- ``not adjacent to land'' is the obvious candidate
---- the signature grows a \texttt{\&Map} at that point and not before.
+\textbf{\texttt{Nearer} names cells, not \islands{}:} \islands{} sit on cells that everybody knows, so \texttt{Cell} is strictly more general and saves a lookup.
+An \island{} can still announce the \clue{} as ``closer to the northern \island{} than to the southern one'', as that is mere presentation and the \island{}'s own business.
 
-\textbf{\texttt{Nearer} names cells, not \islands.} \islands sit on cells that everybody knows, so
-\texttt{Cell} is strictly more general and saves a lookup. An \island{} is still free to announce
-the \clue{} as ``closer to the northern \island{} than to the southern one''; that is presentation,
-and it is the
-\island's business.
+\textbf{Derives and attributes:} \texttt{Ord} and \texttt{Hash} enforce a deterministic iteration order, while \texttt{Copy} avoids ownership overhead for a four-word type.
+Moreover, the variant is part of the \clue{}, not an implementation detail: when an \island{} weakens a \clue{}, it returns the same variant it was given (a weakened \texttt{Nearer} is still a \texttt{Nearer}) by moving a single field, so \texttt{Clue} needs no separate notion of strength.
 
-\textbf{The derives are load-bearing.} \texttt{Ord} and \texttt{Hash} exist so that a collection of
-\clues{} can be put in a deterministic order before anything iterates it, which the determinism
-rules require. \texttt{Copy} exists because a \texttt{Clue} is four words and copying it is cheaper
-than reasoning about who owns it.
-
-\textbf{The variant is part of the \clue, not an implementation detail.} When an \island{} weakens
-a \clue{} it answers with the same variant it was given --- a weakened \texttt{Nearer} is a
-\texttt{Nearer}. That is why weakening is a matter of moving one field, and
-why \texttt{Clue} needs no separate notion of strength.
-
-\textbf{\texttt{\#[non\_exhaustive]} is deliberate}, and it is aimed squarely at \ships. A \ship{}
-should ask a \clue{} whether it holds, never take it apart to see what kind it is. The attribute
-makes that the path of least resistance: a \ship{} that matches on variants must write a \texttt{\_}
-arm, and a \ship{} that leans on \texttt{holds} keeps working unchanged when a fifth variant
-appears.
+\texttt{\#[non\_exhaustive]} pushes \ships{} to evaluate a \clue{} via \texttt{holds} rather than pattern-matching on its variants: a \texttt{match} expression requires a fallback \texttt{\_} arm, whereas calling \texttt{holds} continues to work unchanged even if a fifth variant is introduced.
 
 \subsection{What a \ship{} does with them}
-
-The cells still consistent with a collection of \clues{} are the water cells that satisfy all of
-them:
 
 \begin{lstlisting}
 let candidates: Vec<Cell> = map
@@ -683,19 +649,9 @@ let candidates: Vec<Cell> = map
     .collect();
 \end{lstlisting}
 
-A \ship{} that has read the \MD{} can do better than that in one line. The \treasure{} is never on
-a rock and never adjacent to land, so \texttt{clear\_cells} is the right iterator and the cells
-touching land can go too --- which on a crowded map throws away a good fraction of the sea before
-a single \clue{} is evaluated. The snippet above is correct; it is not the best you can do.
+Because geography is public (cell types --- clear water, rock, \island{} footprint, cliff --- are sent with \texttt{Welcome} and never change, leaving only rival positions and the \treasure{} hidden), a \ship{} can optimize this baseline to plan a route: the \treasure{} never spawns on rocks or adjacent to land, so iterating over \texttt{clear\_cells} and discarding land-adjacent cells prunes the search space before evaluating any \clue{}.
+Moreover, strict conjunction (\texttt{all}) is just a baseline, as a single false \clue{} from a rival will empty \texttt{candidates}.
 
-This requires a \ship{} to know the map, and it does: \textbf{the geography is public}. The kind of
-every cell --- clear water, rock, \island{} footprint, cliff --- is delivered with
-\texttt{Welcome} and never changes. A \ship{} needs it to plan a route in any case. What is hidden
-is where the rivals are, and which single cell holds the \treasure{}.
-
-Note also that the snippet above is the floor and not the ceiling. A \ship{} that does only this has
-nothing left to say the moment \texttt{candidates} comes back empty --- which it will, the first
-time a rival lies to it.
 
 \newpage
 \section{Rounds}
