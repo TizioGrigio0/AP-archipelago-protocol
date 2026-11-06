@@ -175,17 +175,12 @@ recognise instead of failing to compile --- or worse, compiling and being wrong.
 \section{Geometry}
 \label{proto:geometry}
 
-Hex geometry is provided by a single shared library, written once by contractors and linked by
-every component. \textbf{Do not write your own.} A \ship{} that computes visibility differently
-from the \chart{} will plan moves the \chart{} rejects, and the resulting argument between two
-groups cannot be settled by either of them.
+Hex geometry comes from a single shared library, written once and linked by every component. \textbf{Do not write your own}: if a \ship{} computes distances or visibility differently from the \chart{}, the two will disagree.
 
 \subsection{Coordinates}
 \label{proto:coords}
 
-Cells use \textbf{axial} coordinates $(q, r)$, in a pointy-top layout. A third coordinate
-$s = -q - r$ is implied; the triple $(q, r, s)$ always sums to zero and is convenient for
-arithmetic.
+Cells use \textbf{axial} coordinates $(q, r)$, pointy-top layout. A third coordinate $s = -q - r$ is implied, so $(q, r, s)$ always sums to zero.
 
 \begin{lstlisting}
 #[derive(Copy, Clone, PartialEq, Eq, Hash, PartialOrd, Ord, Debug)]
@@ -201,16 +196,12 @@ impl Cell {
 }
 \end{lstlisting}
 
-Note that \texttt{Cell} derives \texttt{Ord}. This is not decoration: several rules require
-iterating over cells in a fixed order, and an unordered traversal would make the game
-non-reproducible (see the \MD{} on determinism).
+\texttt{Cell} derives \texttt{Ord} on purpose: several rules iterate over cells in a fixed order, and an unordered traversal would make the game non-reproducible.
 
 \subsection{Directions}
 \label{proto:directions}
 
-There are exactly six directions, and no diagonals. This uniformity is the main reason a hex grid
-was chosen over a square one: on a square grid every group would have to decide separately what a
-diagonal costs and whether it can be blocked, and they would decide differently.
+There are exactly six directions and no diagonals.
 
 \begin{center}
 \begin{tabular}{|l|c|c|}
@@ -243,15 +234,9 @@ impl Direction {
 }
 \end{lstlisting}
 
-Turning is therefore addition modulo six. The \textbf{relative angle} between two directions is
-their difference modulo six, folded into the range $0$ to $3$: $0$ means the same direction, $3$
-means directly opposite. The wind rule is expressed in it (\cref{proto:weather}).
+Turning is addition modulo six. The \textbf{relative angle} between two directions is their difference modulo six, folded into the range $0$--$3$ ($0$ = same direction, $3$ = opposite). The wind rule is expressed in it. (\cref{proto:weather}).
 
-That numbering is load-bearing in one other place. \ship{} $i$ starts on corner $i$ (see the
-\MD), and ``corner $i$'' means the cell at distance \texttt{archipelago\_radius} along direction
-$i$. Get the order wrong and six \ships{} start in the wrong places.
-
-\subsection{Distance and ranges}
+The numbering also defines starting positions: \ship{} $i$ starts on corner $i$, which is the cell at distance \texttt{archipelago\_radius} along direction $i$.\subsection{Distance and ranges}
 
 The distance between two cells is
 
@@ -262,16 +247,13 @@ $\mathrm{dist}(a,b) = \frac{|a_q - b_q| + |a_r - b_r| + |a_s - b_s|}{2}$
 It is never negative, so \texttt{Cell::distance} returns \texttt{u32} and compares directly
 against \texttt{vision\_range}, \texttt{bombard\_range} and a \clue's radius without a cast.
 
-The library provides neighbours of a cell, all cells within a given distance (a \emph{disc}), all
-cells at exactly a given distance (a \emph{ring}), and the line between two cells
+The library provides functions for cell neighbours, all cells within a given distance (a \emph{disc}), all cells at an exact distance (a \emph{ring}), and the line between two cells.
 (\fullref{proto:los}).
 
 \subsection{The map}
 \label{proto:map}
 
-The \archipelago{} is the disc of radius \texttt{archipelago\_radius} around the origin, which on
-a hex grid is itself a hexagon. Cells outside it do not exist. Every cell inside is one of four
-kinds:
+The \archipelago{} is the hexagonal disc of radius \texttt{archipelago\_radius} around the origin. Cells outside it do not exist. Every cell inside is one of four kinds:
 
 \begin{lstlisting}
 #[derive(Copy, Clone, PartialEq, Eq, Hash, PartialOrd, Ord, Debug)]
@@ -302,16 +284,12 @@ impl Map {
 }
 \end{lstlisting}
 
-\textbf{Land} means \texttt{Island} or \texttt{Cliff}, and \textbf{water} means \texttt{Clear} or
-\texttt{Rock}. Every rule that speaks of land or water means exactly those two sets, so nothing
-has to be restated: land cannot be entered and blocks sight, water can be entered and does not. A
-rock is water by both tests --- enterable and transparent --- and the only thing that
-distinguishes it is what entering it costs (see the \MD).
+\textbf{Land} (\texttt{Island}, \texttt{Cliff}) cannot be entered and blocks sight; \textbf{water} (\texttt{Clear}, \texttt{Rock}) can be entered and does not. A rock differs from clear water only in the cost of entering it.
 
 \subsection{The small types}
 \label{proto:types}
 
-Five more, so that the messages below do not refer to types nobody has written down:
+Defines basic shared types that derive \texttt{Ord} for deterministic sorted traversal:
 
 \begin{lstlisting}
 #[derive(Copy, Clone, PartialEq, Eq, Hash, PartialOrd, Ord, Debug)]
@@ -327,14 +305,10 @@ pub type Round = u32;
 pub type Seed = u64;
 \end{lstlisting}
 
-All of them derive \texttt{Ord} for the same reason \texttt{Cell} does: sorted traversal is how
-this project stays reproducible.
-
 \subsection{\texttt{Params}}
 \label{proto:params}
 
-Every numeric rule of the game travels in one struct, handed to the \chart{} when the world is
-generated and to each \ship{} in \texttt{Welcome}:
+All the numeric rules travel in one struct, given to the \chart{} at generation and to each \ship{} in \texttt{Welcome}. 
 
 \begin{lstlisting}
 #[non_exhaustive]
@@ -352,15 +326,7 @@ pub struct Params {
 }
 \end{lstlisting}
 
-Recommended values, and the reasoning behind them, are in the \MD. Two things are \emph{not} in
-this struct and must not be added to it. The number of \ships{} is always six. Rock damage is
-half of \texttt{hull\_strength} rounded up, derived rather than configured, because two parameters
-that must agree are two parameters that will not.
-
-\texttt{\#[non\_exhaustive]} means no other crate can write a \texttt{Params} literal, so this
-crate must also export a way to build one --- a \texttt{Default} carrying the recommended values,
-and a builder or a set of \texttt{with\_} methods on top of it. Without that, nobody can call
-\texttt{generate}, and no group can write a test at a radius other than the default.
+The number of \ships{} (always six) and the rock damage (half of \texttt{hull\_strength}, rounded up) are derived, not configured. Being \texttt{\#[non\_exhaustive]}, \texttt{Params} cannot be built with a literal outside the crate, so we must export a \texttt{Default} and a builder or \texttt{with\_} methods (otherwise nobody can call \texttt{generate}).
 
 \newpage
 \section{Line of sight}
