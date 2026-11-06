@@ -485,31 +485,20 @@ the six sides, and a \ship{} entirely surrounded by land.
 \section{Weather}
 \label{proto:weather}
 
-The wind is not stored and updated. It is a \textbf{pure function of the weather seed and the round
-number}:
+The wind is stateless, determined purely by a function of the seed and round number:
 
 \begin{lstlisting}
 pub fn wind_at(weather_seed: Seed, round: Round) -> Direction;
 \end{lstlisting}
 
-There is no accumulated weather state that two implementations could let drift apart, no update
-step to get wrong, and any component can compute the wind for any round without having observed
-the rounds in between --- which is what lets a \ship{} plan a route several rounds ahead.
+This allows a \ship{} to compute future rounds directly with no accumulated state to drift.
+The returned \texttt{Direction} indicates where the wind blows from, shutting the course whose
+relative angle to it is $0$ (opposite to the wind).
 
-\textbf{The \texttt{Direction} returned is the direction the wind blows \emph{from}}, exactly as
-at sea: a north wind comes out of the north. Sailing into the wind therefore means sailing along
-that same direction, so the course whose relative angle to it is $0$ is the one that is shut.
-
-The laws the function must obey, and what the wind does to a \ship, are in the \MD. In short: from
-one round to the next it holds or turns by one step and never two, so it can never reverse in a
-single round; it takes all six values within any sixty rounds; and the one course whose relative
-angle to it is $3$ is forbidden.
-
-\textbf{The weather seed is not the generation seed.} Both are derived from the game seed, as
-independent streams, and only the weather one is ever given to a \ship. A \ship{} holding the
-generation seed could re-run \texttt{generate} and read off the \treasure{}'s cell without visiting
-a single \island, which would end the game before it began. This is easy to get wrong and invisible
-from outside, so test for it.
+Across consecutive rounds, the wind turns by at most
+one step---never reversing---and covers all six values every sixty rounds. To prevent a \ship{}
+from re-running \texttt{generate} to uncover the \treasure{}'s cell, only the weather seed is shared,
+derived independently from the game seed.
 
 \newpage
 \section{Starting a game}
