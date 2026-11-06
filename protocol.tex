@@ -777,6 +777,24 @@ does not achieve --- it keeps honest code correct, and it stops nothing at all i
 simply stores an old token and sends it again, which is why the \admiralty{} checks the round
 number as well.
 
+The \texttt{action} a \texttt{Submit} carries is one of the actions the \MD{} lists:
+
+\begin{lstlisting}
+#[non_exhaustive]
+#[derive(Copy, Clone, PartialEq, Eq, Debug)]
+pub enum Action {
+    Move { to: Cell },
+    Moor { island: IslandId },
+    AskClue,
+    Bombard { target: ShipId },
+    ProposeAlliance { to: ShipId },
+    AcceptAlliance { proposer: ShipId },
+    BreakAlliance,
+    Declare,
+    Hold,
+}
+\end{lstlisting}
+
 \subsection{The order of business}
 
 For each round the \admiralty:
@@ -1204,12 +1222,6 @@ oversight:
 \begin{enumerate}
     \item \textbf{The conflict order and every conflict outcome} (\fullref{proto:conflicts}). The
       most important item on this list, and the one with the largest consequences.
-    \item \textbf{The \texttt{Action} enumeration.} The \MD{} lists the actions and what they mean.
-      \texttt{Move} is settled --- it carries the single neighbouring \texttt{Cell} to sail to ---
-      but the rest is not: how an \island{} is named, and what an \island's answer to
-      \texttt{AskClue} looks like when it is neither a \clue{} nor a refusal. Note that
-      \texttt{AcceptAlliance} has to name a proposer: a \ship{} may hold one outgoing proposal but
-      any number of incoming ones (see the \MD).
     \item \textbf{The \texttt{Event} enumeration.} What a \ship{} is told happened, as distinct from
       what it can see. Take care: an event is as capable of leaking information as a view is, and it
       is easier to forget. What a bombardment reveals is already settled in the \MD{} --- the
