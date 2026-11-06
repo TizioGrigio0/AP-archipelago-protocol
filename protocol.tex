@@ -1226,11 +1226,13 @@ This section lists the choices the \WG{} must make for the game's rules and mess
       \ship's inbound channel is full.
 \end{enumerate}
 
-One piece of advice on how to run this. The productive way to find the holes in a protocol is to
-try to abuse it. Take a message and ask what happens if it arrives twice, arrives late, arrives
-before \texttt{Welcome}, or arrives from somebody who should not be able to send it. Draw the
-states a \ship{} can be in --- sailing, moored, sunk --- and look for the transitions nobody has
-named. The problems worth finding are almost never in a single message; they are in two features
-that were each specified alone.
+The best way to find holes in a protocol is trying to abuse it.
+The problems that are worth to find are almost between two features that were specified alone.
+% One piece of advice on how to run this. The productive way to find the holes in a protocol is to
+% try to abuse it. Take a message and ask what happens if it arrives twice, arrives late, arrives
+% before \texttt{Welcome}, or arrives from somebody who should not be able to send it. Draw the
+% states a \ship{} can be in --- sailing, moored, sunk --- and look for the transitions nobody has
+% named. The problems worth finding are almost never in a single message; they are in two features
+% that were each specified alone.
 
 \end{document}
