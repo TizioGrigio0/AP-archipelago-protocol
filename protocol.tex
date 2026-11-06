@@ -198,6 +198,9 @@ impl Cell {
     pub fn s(self) -> i32 { -self.q - self.r }
     pub fn neighbour(self, direction: Direction) -> Cell;
     pub fn distance (self, other: Cell) -> u32;
+    pub fn neighbours(self) -> [Cell; 6];
+    pub fn disc(self, radius: u32) -> impl Iterator<Item = Cell>;
+    pub fn ring(self, radius: u32) -> impl Iterator<Item = Cell>;
 }
 \end{lstlisting}
 
