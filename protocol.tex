@@ -1197,62 +1197,42 @@ existence and their timing can at least be established afterwards.
 \section{What the \WG{} must settle}
 \label{proto:todo}
 
-The \MD{} lists the decisions the \WG{} owes for the game's \emph{rules}. What follows is the same
-list for its \emph{messages}, and each item is open because it is a decision rather than an
-oversight:
+This section lists the choices the \WG{} must make for the game's rules and messages:
 
 \begin{enumerate}
-    \item \textbf{The conflict order and every conflict outcome} (\fullref{proto:conflicts}). The
-      most important item on this list, and the one with the largest consequences.
-    \item \textbf{The \texttt{Action} enumeration.} The \MD{} lists the actions and what they mean.
-      \texttt{Move} is settled --- it carries the single neighbouring \texttt{Cell} to sail to ---
-      but the rest is not: how an \island{} is named, and what an \island's answer to
-      \texttt{AskClue} looks like when it is neither a \clue{} nor a refusal. Note that
-      \texttt{AcceptAlliance} has to name a proposer: a \ship{} may hold one outgoing proposal but
-      any number of incoming ones (see the \MD).
-    \item \textbf{The \texttt{Event} enumeration.} What a \ship{} is told happened, as distinct from
-      what it can see. Take care: an event is as capable of leaking information as a view is, and it
-      is easier to forget. What a bombardment reveals is already settled in the \MD{} --- the
-      victim learns who fired, the attacker learns whether it hit --- but the shape of the events
-      that carry it is not. A \ship{} striking a rock needs an event too, and so does a \ship{}
-      sinking on one with nobody to inherit its \clues{}. \textbf{Three things do not follow line
-      of sight}, and the \MD{} fixes all three: an alliance formed or broken, which goes to all
-      six \ships; a declaration, which goes to all six and carries the cell that was named; and
-      the name of whoever fires a shot, which reaches the victim and every onlooker who can see
-      the victim's cell, even when the attacker is nowhere any of them could see. Everything else
-      is filtered by what the \ship{} can see, and no fourth exception may be invented here.
-    \item \textbf{\texttt{ShipView} and \texttt{SpectatorView}} in detail. What may be in them is
-      settled in the \MD; their shape is not.
-    \item \textbf{The \island{} trait}, likewise. Two of its methods are not optional: the \MD{}
-      obliges an \island{} to be able to say that it has nothing further to offer a given \ship,
-      and to say how much longer that \ship{} must wait. Both have to exist in the trait, or an
-      \island{} cannot keep a promise the \MD{} makes on its behalf. The answer type for
-      \texttt{AskClue} belongs here as well, and must be able to express all three legal outcomes:
-      a \clue, a refusal, and ``not yet, come back in $n$ rounds''. A \clue{} it returns is always
-      of the same variant as the one it was given.
-    \item \textbf{\texttt{Outcome}}, carried by \texttt{GameOver} (\fullref{proto:rounds}) and
-      returned by \texttt{Chart::outcome}. The \MD{} fixes what is ranked --- how many of the
-      world's \clues{} a \ship{} holds at full strength, ties by identifier --- so what is open is
-      the shape: whether a \ship{} is told the whole ordering or only its own place, and how much
-      of either a \ship{} that sank in round twelve can be told, given that the game had not
-      finished when its \texttt{GameOver} was sent. Note two things the \chart{} must carry for
-      it: a sunk \ship's count, recorded as it sinks, because its \clues{} pass to the killer a
-      moment later; and the fact that a game ended with nobody afloat, which no \texttt{EndReason}
-      expresses.
-    \item \textbf{\texttt{GenError}}, returned by \texttt{generate}. The \MD{} gives it at least
-      two causes --- parameters refused outright, and rejection sampling that ran out of attempts
-      --- and a harness that cannot tell them apart cannot say whether to fix the parameters or
-      try another seed.
-    \item \textbf{Deadline behaviour} when a submission arrives in the same instant it expires.
-    \item \textbf{Channel capacity}, and what the \admiralty{} does when a \ship's inbound channel
-      is full.
+    \item \textbf{Conflicts:} (\fullref{proto:conflicts}).
+      Decide the order of conflicts resolution and the outcome of each one.
+    \item \textbf{The \texttt{Action} enum:} Decide how an \island{} is named, how it answers
+      \texttt{AskClue} when the answer is neither a \clue{} nor a refusal, and what identifies
+      the proposer in \texttt{AcceptAlliance}.
+    \item \textbf{The \texttt{Event} enum:} Decide which occurrences deserve an event,
+      which information each one carries, and how are delivered. In particular, settle
+      them for bombardment outcomes, striking a rock and sinking, together with the
+      information revealed to the affected, the acting \ship{}, and observers. Decide
+      which events follow line of sight and which, are delivered as exceptions to it.
+    \item \textbf{\texttt{ShipView} and \texttt{SpectatorView}:} Decide their representation,
+      the relationship between them, and the filtering rules that govern each view.
+    \item \textbf{The \island{} trait:} Decide which operations the trait exposes, how an island
+      reports its clue availability and waiting time, and how the possible \texttt{AskClue}
+      responses are represented.
+    \item \textbf{\texttt{Outcome}:} Decide the result's representation, the information disclosed
+      to each recipient, and how outcomes account for ships that sank before the game ended or a
+      game with nobody afloat.
+    \item \textbf{\texttt{GenError}:} Decide which generation failures must be distinguishable
+      and what information each error carries.
+    \item \textbf{Deadline behaviour:} Decide how to resolve a submission that arrives at the
+      same instant its deadline expires.
+    \item \textbf{Channel capacity:} Decide the capacities and the \admiralty's response when a
+      \ship's inbound channel is full.
 \end{enumerate}
 
-One piece of advice on how to run this. The productive way to find the holes in a protocol is to
-try to abuse it. Take a message and ask what happens if it arrives twice, arrives late, arrives
-before \texttt{Welcome}, or arrives from somebody who should not be able to send it. Draw the
-states a \ship{} can be in --- sailing, moored, sunk --- and look for the transitions nobody has
-named. The problems worth finding are almost never in a single message; they are in two features
-that were each specified alone.
+The best way to find holes in a protocol is trying to abuse it.
+The problems that are worth to find are almost between two features that were specified alone.
+% One piece of advice on how to run this. The productive way to find the holes in a protocol is to
+% try to abuse it. Take a message and ask what happens if it arrives twice, arrives late, arrives
+% before \texttt{Welcome}, or arrives from somebody who should not be able to send it. Draw the
+% states a \ship{} can be in --- sailing, moored, sunk --- and look for the transitions nobody has
+% named. The problems worth finding are almost never in a single message; they are in two features
+% that were each specified alone.
 
 \end{document}
