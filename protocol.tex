@@ -132,24 +132,24 @@ wrong --- some will have survived --- and that is also what this exercise is abo
 There are three kinds of participant, and only two of them speak:
 
 \begin{description}
-    \item[The \admiralty] The referee. Exactly one per game. It owns every channel, decides when
-      rounds begin and end, asks the \chart{} to validate and apply actions, and relays messages
-      between \ships. It knows no rules of its own.
-    \item[A \ship] One thread, one pair of channel endpoints, one action per round. There are
-      exactly six, one on each corner of the sea (see the \MD).
-    \item[The \cartographer] A privileged participant that sees everything and may control the
-      game.
+    \item[The \admiralty] %The referee. One per game. It owns every channel, decides when
+      %rounds begin and end, asks the \chart{} to validate and apply actions, and relays messages
+      %between \ships. It knows no rules of its own.
+    \item[A \ship] %One thread, one pair of channel endpoints, one action per round. There are
+      %exactly six, one on each corner of the sea (see the \MD).
+    \item[The \cartographer] %A privileged participant that sees everything and may control the
+      %game.
 \end{description}
 
-\islands do not appear here. They are objects inside the \chart{} and send nothing.
-
-\ships hold no channel to one another. Everything a \ship{} says to another \ship{} passes through
-the \admiralty. \Cref{proto:mail} explains why.
+%\islands do not appear here. They are objects inside the \chart{} and send nothing.
+Everything said bedtweem \ships passes to the \admiralty. more info at \Cref{proto:mail}.
+% Everything a \ship{} says to another \ship{} passes through
+% the \admiralty. \Cref{proto:mail} explains why.
 
 \subsection{Four message sets}
 \label{proto:foursets}
 
-There are four enumerations, not two:
+There are four enumerations:
 
 \begin{center}
 \begin{tabular}{|l|l|}
@@ -161,10 +161,9 @@ There are four enumerations, not two:
 \end{tabular}
 \end{center}
 
-The split is deliberate and is a design requirement, not tidiness. The complete state of the game
+The split is deliberate and is a design requirement. The complete state of the game
 exists only in \texttt{AdmiraltyToCartographer}. Because a \ship{} cannot receive a value of that
-type, no later change to the code can accidentally hand a \ship{} the omniscient view. If instead
-there were one message set with a flag, that mistake would be one careless line away.
+type.
 
 \textbf{Every enumeration in this document must be \texttt{\#[non\_exhaustive]}}, without
 exception. This protocol will change repeatedly during
