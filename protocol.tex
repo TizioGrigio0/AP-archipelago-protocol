@@ -517,23 +517,19 @@ from outside, so test for it.
 
 \subsection{There is no handshake}
 
-Nobody dials in, so there is nothing to negotiate. There is no protocol version to check --- every
-component is compiled into the same binary, so a mismatch is a compile error rather than a runtime
-surprise --- no codec to agree on, and no session to resume.
+Because all components are compiled into a single binary, there is no dial-in or negotiation:
+version mismatches are compile errors, with no codec to agree on and no session to resume.
 
-A game is set up by a harness, which builds the \chart, creates one pair of channel endpoints per
-\ship, and spawns one thread for each. A \ship{} is handed its two endpoints and nothing else. It
-cannot acquire any others, and there is nothing for it to connect to.
-
-Everyone who is going to play is present before round one. There is no joining in progress and no
-reconnecting: a \ship{} whose thread dies is a \ship{} that holds position for the rest of the game
-(\fullref{proto:errors}), not one that comes back.
+A harness sets up the game by building the \chart, creating one pair of channel endpoints per
+\ship, and spawning one thread for each. Each \ship{} receives only its two endpoints and cannot
+acquire any others or connect to anything else. All players are present before round one, with no
+mid-game joining or reconnecting: a \ship{} whose thread dies holds position for the rest of the
+game (\fullref{proto:errors}).
 
 \subsection{\texttt{Welcome}}
 
-The first message a \ship{} receives is always \texttt{Welcome}, and it arrives before the first
-\texttt{RoundOpen}. Like everything else a \ship{} receives it is a variant of
-\texttt{AdmiraltyToShip}; the struct below is what that variant carries.
+The first message a \ship{} receives is always \texttt{Welcome}, delivered before the first
+\texttt{RoundOpen} as a variant of \texttt{AdmiraltyToShip} carrying the following struct:
 
 \begin{lstlisting}
 pub struct Welcome {
@@ -547,36 +543,29 @@ pub struct Welcome {
 }
 \end{lstlisting}
 
-Five things about it.
+Five key rules govern \texttt{Welcome}:
 
-\textbf{\texttt{params} is delivered, not assumed.} This is what allows a \ship{} not to hardcode
-the size of the sea, the strength of a hull, or how many \islands{} --- and therefore how many
-\clues{} --- a game has. A \ship{} that
-ignores this field will fail against a \chart{} configured differently from the one its author
-tested with --- and at the fair it will be running against exactly that.
+\textbf{\texttt{params} is delivered, not assumed.} A \ship{} must not hardcode sea size, hull
+strength, or the number of \islands{} (and therefore \clues{}), otherwise it will fail at the fair
+when run against a differently configured \chart{}.
 
-\textbf{The map is public.} Geography is not a secret: a \ship{} must be able to plan a route, and
-it must be able to enumerate the water cells a \clue{} could be describing (\fullref{proto:clue}).
-What is hidden is where the other \ships are and which cell holds the \treasure{}.
+\textbf{The map is public.} A \ship{} needs the geography to plan routes and to enumerate the water
+cells a \clue{} could describe (\fullref{proto:clue}). Only the other \ships{}' positions and the
+\treasure{}'s cell are hidden.
 
-\textbf{The weather seed is not the world seed.} A \ship{} is given enough to compute the wind of
-any round for itself, so that it can plan a route several rounds ahead. It is emphatically not given
-the seed the \archipelago{} was generated from: that seed determines where the \treasure{} is, and a
-\ship{} holding it could simply re-run generation and sail there. The \chart{} must therefore derive
-two independent streams from the game seed, and only the weather one ever leaves it. This is easy to
-get wrong and impossible to notice from the outside, so it is a requirement rather than a
-suggestion.
+\textbf{The weather seed is not the world seed.} It allows a \ship{} to compute the wind for any
+round and plan routes ahead, without revealing the seed used to generate the \archipelago{} (which
+would let a \ship{} re-run generation and locate the \treasure{}). The \chart{} must derive two
+independent streams from the game seed and only expose the weather seed.
 
-\textbf{The roster is complete and public.} Who is playing is known to everybody from the start.
-Where they are is another matter entirely, and \texttt{Welcome} carries no position.
+\textbf{The roster is complete and public.} Who is playing is known to everyone from the start,
+whereas \texttt{Welcome} carries no position.
 
-\textbf{There is no \texttt{mode} field, and there must not be one.} The \MD{} requires that no
-message a \ship{} receives name the schedule it is being run under, and a field saying so would
-hand it the answer outright. It would also be read: tell a competitor which mode it is in
-and somebody will branch on it, and gain in Sequential what it could not gain in Simultaneous.
-The \cartographer{} is told the mode instead (\cref{proto:cartographer}), because no \ship{} can
-receive a message addressed to it --- which is the whole reason there are four message sets
-(\cref{proto:foursets}).
+\textbf{There is no \texttt{mode} field, and there must not be one.} As required by the \MD{}, no
+message to a \ship{} may reveal the scheduling mode, preventing competitors from branching on it to
+gain an advantage in Sequential mode over Simultaneous. Only the \cartographer{} is told the mode
+(\cref{proto:cartographer}), which is guaranteed not to reach any \ship{} thanks to the four
+separate message sets (\cref{proto:foursets}).
 
 \newpage
 \section{\clues{}}
